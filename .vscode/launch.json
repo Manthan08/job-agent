@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [                
+        {
+            "name": "Debug parse_resume",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "phase1_parse.parse_resume",
+            "args": ["data\\resumes\\sample_resume.pdf"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug score_match",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "phase3_score.score_match",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug tailor_resume",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "phase4_tailor.tailor_resume",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug index_stories",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "phase4_prep.index_stories",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+
+    ]
+}

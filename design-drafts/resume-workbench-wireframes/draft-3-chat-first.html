@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Draft 3 - Chat First</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="app-frame">
+        <header class="topbar">
+          <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 4h8l4 4v12H6V4Z" stroke="currentColor" stroke-width="1.7"></path>
+                <path d="M14 4v5h5M9 13h6M9 16h5" stroke="currentColor" stroke-width="1.7"></path>
+              </svg>
+            </span>
+            <span>
+              <span class="brand-title">Resume Workbench</span>
+              <span class="brand-subtitle">Chat-first draft</span>
+            </span>
+          </a>
+          <nav class="topnav" aria-label="Draft navigation">
+            <a href="index.html">Overview</a>
+            <a href="draft-1-command-center.html">Command</a>
+            <a href="draft-2-guided-flow.html">Guided</a>
+            <span class="active">Chat</span>
+          </nav>
+        </header>
+
+        <main class="main">
+          <div class="chat-first-grid">
+            <aside class="context-rail" aria-label="Context tray">
+              <div class="section-title">
+                <h2>Active context</h2>
+                <small>grounding</small>
+              </div>
+
+              <div class="context-list">
+                <div class="context-item">
+                  <strong>Resume</strong>
+                  <span>sample_resume.pdf uploaded and parsed.</span>
+                </div>
+                <div class="context-item">
+                  <strong>Job description</strong>
+                  <span>Senior Software Engineer, Example Company.</span>
+                </div>
+                <div class="context-item">
+                  <strong>Match score</strong>
+                  <span>72/100 with AI-platform gaps called out.</span>
+                </div>
+              </div>
+
+              <section class="input-card stack-space">
+                <div class="section-title">
+                  <h2>Add or replace JD</h2>
+                  <small>URL</small>
+                </div>
+                <input class="field" aria-label="Job URL" value="https://company.com/job/123">
+                <p class="note">Paste JD text if URL import is not available.</p>
+              </section>
+
+              <section class="help-strip stack-space">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 3v18M5 8h14M6 16h12" stroke="currentColor" stroke-width="1.8"></path>
+                </svg>
+                <div>
+                  <strong>No resume?</strong>
+                  <span>Open profile builder and generate a first resume from the JD.</span>
+                </div>
+              </section>
+            </aside>
+
+            <section class="main-chat" aria-label="Interview coach">
+              <div class="chat-head">
+                <h1>Prepare for the interview with your resume and JD in context.</h1>
+                <p>
+                  The chat is the product. Files, scores, exports, and STAR
+                  stories support the conversation instead of competing with it.
+                </p>
+              </div>
+
+              <div class="chat-thread">
+                <div class="bubble">
+                  I can help you rehearse answers using only evidence from your
+                  resume and the job description. I will separate proven skills,
+                  adjacent skills, and missing skills clearly.
+                </div>
+                <div class="bubble user">What questions can they ask about Azure OpenAI?</div>
+                <div class="bubble">
+                  Expect questions around secure model access, prompt design,
+                  embeddings, retrieval, and production monitoring. For your
+                  resume, we should bridge from .NET cloud delivery and async
+                  messaging to RAG architecture without claiming hands-on Azure
+                  OpenAI work unless you have it.
+                </div>
+                <div class="quick-prompts">
+                  <span>Turn this into a STAR story</span>
+                  <span>Give me a weak-area answer</span>
+                  <span>Ask a follow-up question</span>
+                  <span>Create final prep pack</span>
+                </div>
+              </div>
+
+              <div class="composer">
+                <input aria-label="Ask about resume or job" value="Mock interview me for this JD.">
+                <button class="button primary" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8"></path>
+                  </svg>
+                  Send
+                </button>
+              </div>
+            </section>
+
+            <aside class="artifact-panel" aria-label="Generated artifacts">
+              <div class="section-title">
+                <h2>Artifacts</h2>
+                <small>export</small>
+              </div>
+
+              <article class="artifact-card">
+                <span class="artifact-icon">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 3h7l4 4v14H7V3Z" stroke="currentColor" stroke-width="1.7"></path>
+                    <path d="M14 3v5h5M9 14h6M9 17h4" stroke="currentColor" stroke-width="1.7"></path>
+                  </svg>
+                </span>
+                <div>
+                  <h3>Tailored resume</h3>
+                  <p>Generated for the active JD.</p>
+                  <button class="button compact accent" type="button">Download</button>
+                </div>
+              </article>
+
+              <article class="artifact-card">
+                <span class="artifact-icon sage">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 4h14v16H5V4Z" stroke="currentColor" stroke-width="1.7"></path>
+                    <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7"></path>
+                  </svg>
+                </span>
+                <div>
+                  <h3>Question bank</h3>
+                  <p>Technical, system design, and behavioral.</p>
+                  <button class="button compact" type="button">Download</button>
+                </div>
+              </article>
+
+              <article class="artifact-card">
+                <span class="artifact-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 5h12v14H6V5Z" stroke="currentColor" stroke-width="1.7"></path>
+                    <path d="M9 8h6M9 11h6M9 14h4" stroke="currentColor" stroke-width="1.7"></path>
+                  </svg>
+                </span>
+                <div>
+                  <h3>STAR stories</h3>
+                  <p>Situation, task, action, result prompts.</p>
+                  <button class="button compact" type="button">Download</button>
+                </div>
+              </article>
+
+              <section class="metric-card">
+                <div class="section-title">
+                  <h3>Export readiness</h3>
+                  <span class="status-dot gold"></span>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-row"><strong>Now</strong><span>Ask questions and refine gaps</span></div>
+                  <div class="timeline-row"><strong>Next</strong><span>Generate tailored resume</span></div>
+                  <div class="timeline-row"><strong>Final</strong><span>Download interview pack</span></div>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

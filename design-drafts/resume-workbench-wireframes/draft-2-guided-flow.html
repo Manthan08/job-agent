@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Draft 2 - Guided Flow</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="app-frame">
+        <header class="topbar">
+          <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 4h8l4 4v12H6V4Z" stroke="currentColor" stroke-width="1.7"></path>
+                <path d="M14 4v5h5M9 13h6M9 16h5" stroke="currentColor" stroke-width="1.7"></path>
+              </svg>
+            </span>
+            <span>
+              <span class="brand-title">Resume Workbench</span>
+              <span class="brand-subtitle">Guided flow draft</span>
+            </span>
+          </a>
+          <nav class="topnav" aria-label="Draft navigation">
+            <a href="index.html">Overview</a>
+            <a href="draft-1-command-center.html">Command</a>
+            <span class="active">Guided</span>
+            <a href="draft-3-chat-first.html">Chat</a>
+          </nav>
+        </header>
+
+        <main class="main">
+          <div class="progress-rail" aria-label="Workflow steps">
+            <div class="progress-item active">
+              <strong>1. Add resume</strong>
+              <span>Upload a file or build from profile fields.</span>
+            </div>
+            <div class="progress-item active">
+              <strong>2. Add JD</strong>
+              <span>Paste the JD or use a job posting URL.</span>
+            </div>
+            <div class="progress-item active">
+              <strong>3. Prepare</strong>
+              <span>Ask questions and rehearse with evidence.</span>
+            </div>
+            <div class="progress-item">
+              <strong>4. Export</strong>
+              <span>Download resume, question bank, and stories.</span>
+            </div>
+          </div>
+
+          <div class="flow-grid">
+            <section class="stage-panel">
+              <div class="stage-header">
+                <div>
+                  <h1>Move from raw JD to ready interview pack.</h1>
+                  <p>
+                    This version favors clarity over density. The user sees one
+                    stage at a time, but the generated artifacts stay visible on
+                    the right.
+                  </p>
+                </div>
+                <button class="button primary" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8"></path>
+                  </svg>
+                  New application
+                </button>
+              </div>
+
+              <div class="step-layout">
+                <section class="step-stack">
+                  <article class="step-card">
+                    <div class="section-title">
+                      <h2>Resume source</h2>
+                      <small>choose one</small>
+                    </div>
+                    <div class="dropzone">
+                      <div>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M12 16V4M7 9l5-5 5 5" stroke="currentColor" stroke-width="1.8"></path>
+                          <path d="M5 16v3h14v-3" stroke="currentColor" stroke-width="1.8"></path>
+                        </svg>
+                        <strong>Upload resume</strong>
+                        <span>Or continue with the quick profile builder.</span>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="step-card">
+                    <div class="section-title">
+                      <h2>Quick profile builder</h2>
+                      <small>fallback</small>
+                    </div>
+                    <div class="profile-builder">
+                      <input class="field" aria-label="Full name" value="Full name">
+                      <input class="field" aria-label="Target role" value="Target role">
+                      <input class="field" aria-label="Years experience" value="Years experience">
+                      <input class="field" aria-label="Location" value="Location">
+                      <textarea class="textarea-field wide" aria-label="Profile summary">Paste 3-5 bullets: work experience, projects, skills, education.</textarea>
+                    </div>
+                  </article>
+                </section>
+
+                <section class="step-card">
+                  <div class="section-title">
+                    <h2>Interview coach</h2>
+                    <small>main workspace</small>
+                  </div>
+                  <div class="interview-slate">
+                    <article class="prompt-card">
+                      <strong>What should I study first?</strong>
+                      <span>Ranks the JD requirements by interview likelihood and resume evidence.</span>
+                    </article>
+                    <article class="prompt-card">
+                      <strong>Where is my resume weak for this JD?</strong>
+                      <span>Separates matched, adjacent, and missing skills without fabrication.</span>
+                    </article>
+                    <article class="prompt-card">
+                      <strong>Create a 30-minute mock interview.</strong>
+                      <span>Technical questions, behavioral questions, and feedback after each answer.</span>
+                    </article>
+                    <div class="composer">
+                      <input aria-label="Ask coach" value="Build a study plan for this interview.">
+                      <button class="button primary" type="button">Ask</button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            <aside class="right-stack" aria-label="Outputs and status">
+              <section class="download-panel">
+                <h2>Ready when context is complete</h2>
+                <div class="download-list">
+                  <div class="download-item">
+                    <span class="artifact-icon">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M7 3h7l4 4v14H7V3Z" stroke="currentColor" stroke-width="1.7"></path>
+                        <path d="M14 3v5h5M9 14h6M9 17h4" stroke="currentColor" stroke-width="1.7"></path>
+                      </svg>
+                    </span>
+                    <div>
+                      <h3>Tailored resume</h3>
+                      <p>PDF and Markdown versions.</p>
+                    </div>
+                    <button class="button compact" type="button">Get</button>
+                  </div>
+                  <div class="download-item">
+                    <span class="artifact-icon sage">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M5 4h14v16H5V4Z" stroke="currentColor" stroke-width="1.7"></path>
+                        <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7"></path>
+                      </svg>
+                    </span>
+                    <div>
+                      <h3>Question bank</h3>
+                      <p>JD-specific interview questions.</p>
+                    </div>
+                    <button class="button compact" type="button">Get</button>
+                  </div>
+                  <div class="download-item">
+                    <span class="artifact-icon blue">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M6 5h12v14H6V5Z" stroke="currentColor" stroke-width="1.7"></path>
+                        <path d="M9 8h6M9 11h6M9 14h4" stroke="currentColor" stroke-width="1.7"></path>
+                      </svg>
+                    </span>
+                    <div>
+                      <h3>STAR stories</h3>
+                      <p>Stories mapped to JD competencies.</p>
+                    </div>
+                    <button class="button compact" type="button">Get</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="metric-card">
+                <div class="section-title">
+                  <h3>Grounding checklist</h3>
+                  <span class="status-dot"></span>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-row"><strong>Resume</strong><span>Active file or profile fields</span></div>
+                  <div class="timeline-row"><strong>JD</strong><span>URL stored with raw description</span></div>
+                  <div class="timeline-row"><strong>Score</strong><span>Match reasoning visible before export</span></div>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

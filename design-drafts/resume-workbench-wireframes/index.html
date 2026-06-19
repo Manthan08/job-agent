@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resume Workbench Wireframes</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="app-frame">
+        <header class="topbar">
+          <a class="brand" href="index.html" aria-label="Resume Workbench home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 4h8l4 4v12H6V4Z" stroke="currentColor" stroke-width="1.7"></path>
+                <path d="M14 4v5h5M9 13h6M9 16h5" stroke="currentColor" stroke-width="1.7"></path>
+              </svg>
+            </span>
+            <span>
+              <span class="brand-title">Resume Workbench</span>
+              <span class="brand-subtitle">UI wireframe pack</span>
+            </span>
+          </a>
+          <nav class="topnav" aria-label="Draft navigation">
+            <span class="active">Overview</span>
+            <a href="draft-1-command-center.html">Command</a>
+            <a href="draft-2-guided-flow.html">Guided</a>
+            <a href="draft-3-chat-first.html">Chat</a>
+          </nav>
+        </header>
+
+        <main class="overview-main">
+          <section class="intro">
+            <h1>Three clean UX directions for the job-agent UI.</h1>
+            <p>
+              Each draft keeps the same core workflow: resume input, JD input,
+              a large interview coach area, tailored resume download, question
+              bank and STAR story export, plus a fallback profile builder for
+              users who do not have a resume ready.
+            </p>
+
+            <div class="principles" aria-label="Design principles">
+              <div class="principle">
+                <strong>One main work surface</strong>
+                <span>The user always knows where to ask questions and what context the answer uses.</span>
+              </div>
+              <div class="principle">
+                <strong>Context before generation</strong>
+                <span>Resume and JD inputs sit close to the coach, so outputs feel grounded.</span>
+              </div>
+              <div class="principle">
+                <strong>Artifacts stay visible</strong>
+                <span>Downloads are treated like generated assets, not hidden final steps.</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="draft-grid" aria-label="Available drafts">
+            <article class="draft-card">
+              <div>
+                <h2>Draft 1: Command Center</h2>
+                <p>
+                  A practical dashboard layout. Best when the product grows
+                  into tracking status, match score, and multiple generated
+                  artifacts.
+                </p>
+                <a class="primary-link" href="draft-1-command-center.html">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8"></path>
+                  </svg>
+                  Open draft
+                </a>
+              </div>
+              <div class="mini-screen" aria-hidden="true">
+                <div class="mini-row"></div>
+                <div class="mini-wide"></div>
+                <div class="mini-tall"></div>
+                <div class="mini-action"></div>
+              </div>
+            </article>
+
+            <article class="draft-card">
+              <div>
+                <h2>Draft 2: Guided Flow</h2>
+                <p>
+                  A calm step-by-step workspace. Best for first-time users who
+                  need help moving from resume to interview prep.
+                </p>
+                <a class="primary-link" href="draft-2-guided-flow.html">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8"></path>
+                  </svg>
+                  Open draft
+                </a>
+              </div>
+              <div class="mini-screen" aria-hidden="true">
+                <div class="mini-row"></div>
+                <div class="mini-row"></div>
+                <div class="mini-wide"></div>
+                <div class="mini-tall"></div>
+              </div>
+            </article>
+
+            <article class="draft-card">
+              <div>
+                <h2>Draft 3: Chat First</h2>
+                <p>
+                  A Claude-like conversation surface with context and artifacts
+                  on the sides. Best if Q&A becomes the heart of the product.
+                </p>
+                <a class="primary-link" href="draft-3-chat-first.html">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8"></path>
+                  </svg>
+                  Open draft
+                </a>
+              </div>
+              <div class="mini-screen" aria-hidden="true">
+                <div class="mini-row"></div>
+                <div class="mini-chat"></div>
+                <div class="mini-action"></div>
+              </div>
+            </article>
+          </section>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

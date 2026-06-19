@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Draft 1 - Command Center</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="app-frame">
+        <header class="topbar">
+          <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 4h8l4 4v12H6V4Z" stroke="currentColor" stroke-width="1.7"></path>
+                <path d="M14 4v5h5M9 13h6M9 16h5" stroke="currentColor" stroke-width="1.7"></path>
+              </svg>
+            </span>
+            <span>
+              <span class="brand-title">Resume Workbench</span>
+              <span class="brand-subtitle">Command center draft</span>
+            </span>
+          </a>
+          <nav class="topnav" aria-label="Draft navigation">
+            <a href="index.html">Overview</a>
+            <span class="active">Command</span>
+            <a href="draft-2-guided-flow.html">Guided</a>
+            <a href="draft-3-chat-first.html">Chat</a>
+          </nav>
+        </header>
+
+        <main class="main">
+          <div class="workspace-grid">
+            <aside class="sidebar" aria-label="Inputs">
+              <section class="input-card">
+                <div class="section-title">
+                  <h2>Resume</h2>
+                  <small>required</small>
+                </div>
+                <div class="dropzone">
+                  <div>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 16V4M7 9l5-5 5 5" stroke="currentColor" stroke-width="1.8"></path>
+                      <path d="M5 16v3h14v-3" stroke="currentColor" stroke-width="1.8"></path>
+                    </svg>
+                    <strong>Drop resume here</strong>
+                    <span>PDF, DOCX, or use the profile builder below.</span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="input-card">
+                <div class="section-title">
+                  <h2>Job description</h2>
+                  <small>URL or paste</small>
+                </div>
+                <div class="source-tabs">
+                  <span class="selected">Paste JD</span>
+                  <span>Job URL</span>
+                </div>
+                <textarea class="textarea-field" aria-label="Job description">Paste the JD here. The assistant will use it for match score, tailoring, and interview prep.</textarea>
+              </section>
+
+              <section class="help-strip">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 3v18M5 8h14M6 16h12" stroke="currentColor" stroke-width="1.8"></path>
+                </svg>
+                <div>
+                  <strong>No resume template?</strong>
+                  <span>Start from basic details, experience, projects, skills, and education.</span>
+                </div>
+              </section>
+            </aside>
+
+            <section class="work-area">
+              <div class="hero-chat">
+                <section class="chat-panel" aria-label="Interview coach">
+                  <div class="chat-head">
+                    <h1>Ask anything before the interview.</h1>
+                    <p>
+                      Query your resume, the JD, weak areas, likely questions,
+                      project stories, salary talking points, or how to explain
+                      missing skills without bluffing.
+                    </p>
+                  </div>
+
+                  <div class="chat-thread">
+                    <div class="bubble">
+                      I found the JD asks for Azure OpenAI and RAG. Your resume
+                      shows adjacent async messaging and .NET cloud work. We can
+                      frame that honestly and prepare a bridge answer.
+                    </div>
+                    <div class="bubble user">Ask me 5 questions this interviewer may ask.</div>
+                    <div class="quick-prompts">
+                      <span>Explain my strongest match</span>
+                      <span>Find weak JD keywords</span>
+                      <span>Create STAR answers</span>
+                      <span>Mock interview mode</span>
+                    </div>
+                  </div>
+
+                  <div class="composer">
+                    <input aria-label="Ask a question" value="How should I explain my RAG gap?">
+                    <button class="button primary" type="button">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8"></path>
+                      </svg>
+                      Ask
+                    </button>
+                  </div>
+                </section>
+
+                <aside class="insight-stack" aria-label="Insights">
+                  <section class="metric-card">
+                    <div class="section-title">
+                      <h3>Match snapshot</h3>
+                      <span class="status-dot"></span>
+                    </div>
+                    <div class="metric-value">
+                      <strong>72</strong><span>/ 100</span>
+                    </div>
+                    <p>Strong .NET fit. Prepare honest bridges for AI-specific tooling.</p>
+                    <div class="tag-list">
+                      <span>.NET</span>
+                      <span>Azure</span>
+                      <span>Async messaging</span>
+                      <span>RAG gap</span>
+                    </div>
+                  </section>
+
+                  <section class="metric-card">
+                    <div class="section-title">
+                      <h3>Next best action</h3>
+                      <span class="status-dot gold"></span>
+                    </div>
+                    <p>Generate the tailored resume, then use the coach to rehearse missing-skill answers.</p>
+                  </section>
+
+                  <section class="metric-card">
+                    <div class="section-title">
+                      <h3>Privacy note</h3>
+                      <span class="status-dot blue"></span>
+                    </div>
+                    <p>Show exactly which resume and JD are active before every generation.</p>
+                  </section>
+                </aside>
+              </div>
+
+              <section class="output-row" aria-label="Generated artifacts">
+                <article class="artifact-card">
+                  <span class="artifact-icon">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M7 3h7l4 4v14H7V3Z" stroke="currentColor" stroke-width="1.7"></path>
+                      <path d="M14 3v5h5M9 14h6M9 17h4" stroke="currentColor" stroke-width="1.7"></path>
+                    </svg>
+                  </span>
+                  <div>
+                    <h3>Tailored resume</h3>
+                    <p>ATS-safe PDF aligned to the active JD.</p>
+                    <button class="button compact accent" type="button">Download PDF</button>
+                  </div>
+                </article>
+
+                <article class="artifact-card">
+                  <span class="artifact-icon sage">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M5 4h14v16H5V4Z" stroke="currentColor" stroke-width="1.7"></path>
+                      <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7"></path>
+                    </svg>
+                  </span>
+                  <div>
+                    <h3>Question bank</h3>
+                    <p>Role-specific technical and behavioral questions.</p>
+                    <button class="button compact" type="button">Download pack</button>
+                  </div>
+                </article>
+
+                <article class="artifact-card">
+                  <span class="artifact-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M6 5h12v14H6V5Z" stroke="currentColor" stroke-width="1.7"></path>
+                      <path d="M9 8h6M9 11h6M9 14h4" stroke="currentColor" stroke-width="1.7"></path>
+                    </svg>
+                  </span>
+                  <div>
+                    <h3>STAR stories</h3>
+                    <p>Prepared stories mapped to JD competencies.</p>
+                    <button class="button compact" type="button">Download stories</button>
+                  </div>
+                </article>
+              </section>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
