@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from models.keyword_coverage import KeywordCoverageItem, KeywordCoverageReport
+from models.match import MatchResult
 from models.tailored import SkillCategory, TailoredExperienceItem, TailoredResumeModel
 from webapp import services as svc
 
@@ -151,6 +152,10 @@ class TailoringStrategyTests(unittest.TestCase):
                 return_value=report,
             ) as analyze,
             patch("webapp.services.tailor_resume_for_job", return_value=tailored) as tailor,
+            patch(
+                "webapp.services.score_resume_against_job",
+                return_value=MatchResult(match_score=88, reasoning="ok"),
+            ),
             patch("webapp.services.save_tailored_resume"),
             patch(
                 "webapp.services.render_tailored_pdf",

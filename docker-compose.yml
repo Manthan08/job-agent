@@ -1,0 +1,30 @@
+services:
+  resume-buddy:
+    build:
+      context: .
+    image: resume-buddy:local
+    ports:
+      - "${HOST_PORT:-7860}:7860"
+    env_file:
+      - .env
+    environment:
+      PORT: "7860"
+      ANON_COOKIE_SECURE: "false"
+      JOB_AGENT_DB_PATH: /home/user/app/runtime/db/job-tracker.db
+      JOB_AGENT_DATA_DIR: /home/user/app/runtime/data
+    volumes:
+      - resume_buddy_runtime:/home/user/app/runtime
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/api/health', timeout=5).read()\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  resume_buddy_runtime:

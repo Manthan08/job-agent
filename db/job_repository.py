@@ -5,8 +5,8 @@ posting updates the row instead of creating a duplicate.
 """
 
 import sqlite3
-from pathlib import Path
-
+from db.connection import connect as db_connect
+from db.connection import database_path
 from db.public_safety import ensure_public_safety_schema
 from models.jobs import JobDetailsModel
 
@@ -18,13 +18,12 @@ def save_job_to_db(
     """Insert or update one job; return its JobDetails.Id."""
     conn = None
     try:
-        HERE = Path(__file__).resolve().parent
-        db_path = HERE / "job-tracker.db"
+        db_path = database_path()
 
         posting_date = job.job_posting_date.isoformat() if job.job_posting_date else None
         is_open = None if job.is_open is None else (1 if job.is_open else 0)
 
-        conn = sqlite3.connect(db_path)
+        conn = db_connect(db_path)
         ensure_public_safety_schema(conn)
         cursor = conn.cursor()
 
@@ -86,10 +85,9 @@ def get_job_by_id(
     """Fetch one job row as a dict (or None if not found)."""
     conn = None
     try:
-        HERE = Path(__file__).resolve().parent
-        db_path = HERE / "job-tracker.db"
+        db_path = database_path()
 
-        conn = sqlite3.connect(db_path)
+        conn = db_connect(db_path)
         ensure_public_safety_schema(conn)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()

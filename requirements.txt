@@ -1,6 +1,10 @@
 langchain>=0.3.0
-langchain-openai>=0.2.0
+langchain-nvidia-ai-endpoints>=0.3.0
 langchain-community>=0.3.0
+# Optional alternate providers, selected by model-id prefix (groq/*, google/*).
+# Only imported when such a model is configured; NVIDIA stays the default.
+langchain-groq>=0.2.0
+langchain-google-genai>=2.0.0
 pydantic[email]>=2.7.0
 pypdf>=4.2.0
 python-dotenv>=1.0.1

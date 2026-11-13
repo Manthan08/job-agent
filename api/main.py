@@ -5,20 +5,162 @@ LangChain, LangGraph, RAG, database, and PDF logic stay in the phase packages.
 """
 from __future__ import annotations
 
+import asyncio
+import hmac
 import os
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 from phase4_tailor.artifacts import compact_artifact_label
 from webapp import services as svc
 
 MAX_PDF_UPLOAD_BYTES = svc.MAX_PDF_UPLOAD_BYTES
+
+
+# Static admin dashboard shell served at GET /admin. Holds NO secret: it asks for
+# the admin token, stores it in sessionStorage, and fetches /api/admin/usage.
+# Palette mirrors the React app's design tokens (frontend/src/styles.css :root).
+_ADMIN_DASHBOARD_HTML = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Resume Buddy · Admin</title>
+<style>
+  :root{
+    --bg:#f8f4ec; --surface:#ffffff; --ink:#252019; --muted:#6f675d;
+    --faint:#93887c; --line:#e4ddd2; --accent:#c35f2e; --sage:#497564;
+    --blue:#466f91; --gold:#a87929; --radius:8px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 20px 64px;}
+  h1{font-size:22px;margin:0 0 2px;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 22px;}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:24px;}
+  input,select,button{font:inherit;border:1px solid var(--line);border-radius:var(--radius);
+    padding:9px 12px;background:var(--surface);color:var(--ink);}
+  input{min-width:240px;}
+  button{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:650;cursor:pointer;}
+  button:hover{filter:brightness(1.05);}
+  .err{color:#803b37;background:#fff2f0;border:1px solid #dfb7b4;border-radius:var(--radius);
+    padding:10px 12px;font-size:13px;margin-bottom:18px;display:none;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:28px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+  .card .k{color:var(--muted);font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.04em;}
+  .card .v{font-size:30px;font-weight:750;margin-top:6px;}
+  .card .v small{font-size:13px;color:var(--faint);font-weight:600;}
+  h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 12px;}
+  .chart{display:flex;align-items:flex-end;gap:8px;height:180px;
+    border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 6px;}
+  .col{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0;}
+  .col .bv{width:70%;max-width:34px;background:var(--sage);border-radius:4px 4px 0 0;min-height:2px;}
+  .col .cap{font-size:10px;color:var(--faint);white-space:nowrap;}
+  .col .num{font-size:11px;color:var(--muted);font-weight:650;}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+  td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:650;}
+  .muted{color:var(--faint);font-size:12px;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resume Buddy · Admin</h1>
+  <p class="sub">Anonymous usage. Free-tier storage is ephemeral — counts reset when the Space restarts.</p>
+  <div class="bar">
+    <input id="tok" type="password" placeholder="Admin token" autocomplete="off" />
+    <select id="days">
+      <option value="7">Last 7 days</option>
+      <option value="14">Last 14 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="90">Last 90 days</option>
+    </select>
+    <button id="load">Load</button>
+  </div>
+  <div id="err" class="err"></div>
+  <div id="out" style="display:none">
+    <div class="cards" id="cards"></div>
+    <h2>Activity by day</h2>
+    <div class="chart" id="chart"></div>
+    <h2 style="margin-top:28px">All events by type</h2>
+    <table id="types"><tbody></tbody></table>
+    <p class="muted" id="meta"></p>
+  </div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const tokKey = "rb_admin_token";
+  $("tok").value = sessionStorage.getItem(tokKey) || "";
+
+  function card(k, v, sub){
+    return '<div class="card"><div class="k">'+k+'</div><div class="v">'+v+
+      (sub ? ' <small>'+sub+'</small>' : '')+'</div></div>';
+  }
+
+  async function load(){
+    const tok = $("tok").value.trim();
+    const days = $("days").value;
+    $("err").style.display = "none";
+    if(!tok){ showErr("Enter the admin token."); return; }
+    sessionStorage.setItem(tokKey, tok);
+    try{
+      const r = await fetch("/api/admin/usage?days="+days, {headers:{"X-Admin-Token":tok}});
+      if(r.status === 404){ showErr("Wrong token, or ADMIN_TOKEN isn't set on the Space."); return; }
+      if(!r.ok){ showErr("Request failed ("+r.status+")."); return; }
+      render(await r.json());
+    }catch(e){ showErr("Couldn't reach the server."); }
+  }
+
+  function showErr(m){ const e=$("err"); e.textContent=m; e.style.display="block"; $("out").style.display="none"; }
+
+  function render(d){
+    const ev = d.events_by_type || {};
+    const cards = [
+      card("Visitors", d.active_sessions ?? 0, "unique"),
+      card("Resume uploads", ev.resume_upload ?? 0),
+      card("Scores", ev.score ?? 0),
+      card("Tailors", ev.tailor ?? 0),
+      card("Total events", d.total_events ?? 0, "in "+d.days+"d"),
+    ].join("");
+    $("cards").innerHTML = cards;
+
+    const days = d.by_day || [];
+    const max = days.reduce((m,x)=>Math.max(m, x.events||0), 0) || 1;
+    $("chart").innerHTML = days.length
+      ? days.map(x => {
+          const h = Math.round(((x.events||0)/max)*150);
+          const lbl = (x.day||"").slice(5);
+          return '<div class="col"><div class="num">'+(x.events||0)+
+            '</div><div class="bv" style="height:'+h+'px"></div>'+
+            '<div class="cap">'+lbl+'</div></div>';
+        }).join("")
+      : '<div class="muted" style="padding:20px">No activity in this window yet.</div>';
+
+    const rows = Object.keys(ev).sort().map(k =>
+      '<tr><td>'+k+'</td><td>'+ev[k]+'</td></tr>').join("")
+      || '<tr><td colspan="2" class="muted">No events yet.</td></tr>';
+    $("types").querySelector("tbody").innerHTML =
+      '<tr><th>Event type</th><th>Count</th></tr>'+rows;
+
+    $("meta").textContent = "Window: last "+d.days+" days.";
+    $("out").style.display = "block";
+  }
+
+  $("load").addEventListener("click", load);
+  $("tok").addEventListener("keydown", (e)=>{ if(e.key==="Enter") load(); });
+  if($("tok").value) load();
+</script>
+</body>
+</html>
+"""
 
 
 class ProfileResumeRequest(BaseModel):
@@ -196,11 +338,19 @@ async def upload_resume(
             detail=f"Uploaded PDF is too large. Limit is {MAX_PDF_UPLOAD_BYTES} bytes.",
         )
 
-    try:
+    # PDF text extraction + the LLM parse are blocking and multi-second. This is
+    # an `async def` handler, so running them inline would freeze the event loop
+    # and stall every other in-flight request. Offload to a worker thread (the LLM
+    # call is network I/O, so it releases the GIL) and await it — the loop stays
+    # free to service other users while this upload is parsed.
+    def _parse_upload() -> int:
         svc.record_guarded_usage(ctx.session_id, "resume_upload", ctx.ip_hash)
-        resume_id = svc.parse_and_save_uploaded_resume(
+        return svc.parse_and_save_uploaded_resume(
             file_bytes, filename, anonymous_session_id=ctx.session_id
         )
+
+    try:
+        resume_id = await asyncio.to_thread(_parse_upload)
     except Exception as exc:
         raise _bad_request(exc) from exc
     return jsonable_encoder({"resume_id": resume_id, **_bootstrap(ctx)})
@@ -293,6 +443,9 @@ def tailor(
             "pdf_path": str(result.pdf_path),
             "keyword_coverage": result.keyword_report,
             "ats_coverage_score": result.ats_coverage_score,
+            "original_match_score": result.original_match_score,
+            "tailored_match_score": result.tailored_match_score,
+            "iterations": result.iterations,
             "pair_state": _pair_state(payload.resume_id, payload.job_id, ctx),
         }
     )
@@ -350,4 +503,62 @@ def tailored_pdf(
         path=file_path,
         media_type="application/pdf",
         filename=file_path.name,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Admin usage analytics. The app already records anonymous visits (one row per
+# session) and feature events (resume_upload, score, tailor, coach...). These two
+# routes expose the existing `usage_summary()` over HTTP so the owner can read
+# live counts on the deployed Space without shelling into the container.
+#
+# Auth = a single shared secret in ADMIN_TOKEN (set as an HF Space secret).
+# Fail CLOSED: if ADMIN_TOKEN is unset or the supplied token doesn't match, the
+# data route 404s (hides its existence) so nothing is ever public.
+#
+# NOTE: defined ABOVE the StaticFiles mount below so these paths win over the SPA.
+# --------------------------------------------------------------------------- #
+def _admin_authorized(token: str | None) -> bool:
+    expected = os.getenv("ADMIN_TOKEN", "").strip()
+    if not expected:
+        return False  # fail closed: no token configured => no access
+    if not token:
+        return False
+    return hmac.compare_digest(token, expected)
+
+
+@app.get("/api/admin/usage")
+def admin_usage(
+    request: Request,
+    days: int = Query(default=7, ge=1, le=90),
+    token: str | None = Query(default=None),
+) -> Any:
+    supplied = request.headers.get("x-admin-token") or token
+    if not _admin_authorized(supplied):
+        # Same response whether the token is missing, wrong, or unconfigured.
+        raise HTTPException(status_code=404, detail="Not found.")
+    return jsonable_encoder(svc.usage_summary(days=days))
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard() -> str:
+    # Self-contained page: holds NO secret. It asks for the admin token, keeps it
+    # in sessionStorage, and calls /api/admin/usage (which enforces the token).
+    return _ADMIN_DASHBOARD_HTML
+
+
+# --------------------------------------------------------------------------- #
+# Serve the built React frontend from the same origin (single-container deploy,
+# e.g. Hugging Face Spaces). When `frontend/dist` exists (created by
+# `npm run build`), it is mounted LAST so all /api routes above take precedence.
+# In local dev you instead run Vite on :5173 and this mount simply won't exist.
+# --------------------------------------------------------------------------- #
+_FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if _FRONTEND_DIST.is_dir():
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount(
+        "/",
+        StaticFiles(directory=str(_FRONTEND_DIST), html=True),
+        name="frontend",
     )

@@ -2,6 +2,8 @@ import json
 import sqlite3
 from pathlib import Path
 
+from db.connection import connect as db_connect
+from db.connection import database_path
 from db.public_safety import ensure_public_safety_schema
 from models.resume import ResumeModel
 
@@ -15,8 +17,7 @@ def save_resume_to_db(
     try:
         conn = None
         
-        HERE = Path(__file__).resolve().parent
-        db_path = HERE / 'job-tracker.db'
+        db_path = database_path()
         
         skills_json = json.dumps(resume.skills)  # Convert list to JSON string for storage
         
@@ -34,7 +35,7 @@ def save_resume_to_db(
         
 
         # Connect to the SQLite database (it will be created if it doesn't exist)
-        conn = sqlite3.connect(db_path)
+        conn = db_connect(db_path)
         ensure_public_safety_schema(conn)
         
         # Create Cursor object to execute SQL commands
@@ -125,15 +126,14 @@ def save_tailored_resume_link(
     """
     conn = None
     try:
-        HERE = Path(__file__).resolve().parent
-        db_path = HERE / "job-tracker.db"
+        db_path = database_path()
 
         pdf_path = Path(pdf_path).resolve()
         source_resume = source_resume or {}
         skills_json = json.dumps([c.model_dump() for c in tailored.tailored_skills])
         experience_json = json.dumps([e.model_dump() for e in tailored.tailored_experience])
 
-        conn = sqlite3.connect(db_path)
+        conn = db_connect(db_path)
         ensure_public_safety_schema(conn)
         cursor = conn.cursor()
 
@@ -216,10 +216,9 @@ def get_resume_by_id(
     """Fetch one resume row as a dict (or None if not found)."""
     conn = None
     try:
-        HERE = Path(__file__).resolve().parent
-        db_path = HERE / "job-tracker.db"
+        db_path = database_path()
 
-        conn = sqlite3.connect(db_path)
+        conn = db_connect(db_path)
         ensure_public_safety_schema(conn)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()

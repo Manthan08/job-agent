@@ -26,6 +26,9 @@ from pathlib import Path
 from typing import NamedTuple
 from urllib.parse import urlsplit
 
+from config.timing import timed
+from db.connection import connect as db_connect
+from db.connection import database_path
 from models.jobs import JobDetailsModel
 from models.keyword_coverage import KeywordCoverageReport
 from models.match import MatchResult
@@ -38,10 +41,16 @@ from phase3_score.score_match import (
     job_to_text,
     score_resume_against_job,
 )
-from phase4_tailor.tailor_resume import tailor_resume_for_job
+from phase4_tailor.tailor_resume import tailor_resume_for_job, tailored_to_text
 from phase4_tailor.render_pdf import render_tailored_pdf
 from phase4_tailor.save_tailored import save_tailored_resume
-from phase4_tailor.keyword_coverage import analyze_keyword_coverage, ats_coverage_score
+from phase4_tailor.keyword_coverage import (
+    analyze_keyword_coverage,
+    ats_coverage_score,
+    measure_resume_coverage,
+    backfill_uncovered_keywords,
+    bold_matched_keywords,
+)
 from phase4_prep.generate_prep import generate_prep_for_job
 
 from db.resume_repository import (
@@ -56,10 +65,22 @@ from db.preparation_repository import get_application_id, save_prep_to_db
 from db.public_safety import ensure_public_safety_schema as _ensure_public_safety_schema
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = REPO_ROOT / "db" / "job-tracker.db"
-RESUMES_DIR = REPO_ROOT / "data" / "resumes"
-PROFILES_DIR = REPO_ROOT / "data" / "profiles"
-TAILORED_OUTPUT_DIR = REPO_ROOT / "data" / "tailored"
+
+
+def _runtime_path(env_name: str, default: Path) -> Path:
+    configured = os.getenv(env_name)
+    if not configured:
+        return default
+    return Path(configured).expanduser().resolve()
+
+
+DATA_ROOT = _runtime_path("JOB_AGENT_DATA_DIR", REPO_ROOT / "data")
+DB_PATH = database_path()
+RESUMES_DIR = _runtime_path("JOB_AGENT_RESUMES_DIR", DATA_ROOT / "resumes")
+PROFILES_DIR = _runtime_path("JOB_AGENT_PROFILES_DIR", DATA_ROOT / "profiles")
+TAILORED_OUTPUT_DIR = _runtime_path(
+    "JOB_AGENT_TAILORED_DIR", DATA_ROOT / "tailored"
+)
 MAX_PDF_UPLOAD_BYTES = int(os.getenv("MAX_PDF_UPLOAD_BYTES", "5000000"))
 MAX_PDF_PAGES = int(os.getenv("MAX_PDF_PAGES", "8"))
 MAX_PDF_TEXT_CHARS = int(os.getenv("MAX_PDF_TEXT_CHARS", "80000"))
@@ -94,7 +115,10 @@ class TailorRunResult(NamedTuple):
     tailored: TailoredResumeModel
     pdf_path: Path
     keyword_report: KeywordCoverageReport
-    ats_coverage_score: int
+    ats_coverage_score: int          # measured on the tailored resume text
+    original_match_score: int | None # honest fit score before tailoring
+    tailored_match_score: int        # honest fit score after tailoring
+    iterations: int                  # how many tailoring passes were run
 
 
 def _slug(text: str) -> str:
@@ -245,6 +269,9 @@ def record_guarded_usage(
 
     with _connect() as conn:
         _ensure_public_safety_schema_on(conn)
+        # Serialize quota checks with the insert. Without an immediate write lock,
+        # two concurrent requests can both observe "under limit" and both proceed.
+        conn.execute("BEGIN IMMEDIATE;")
 
         if effective_daily_limit is not None:
             used_today = conn.execute(
@@ -339,12 +366,34 @@ def usage_summary(days: int = 7) -> dict:
                 (since,),
             ).fetchall()
         }
+        # Per-day totals power the admin dashboard's trend chart. Distinct
+        # sessions + total events per calendar day, oldest first.
+        by_day = [
+            {
+                "day": row["Day"],
+                "sessions": row["Sessions"],
+                "events": row["Events"],
+            }
+            for row in conn.execute(
+                """
+                SELECT date(CreatedAt) AS Day,
+                       COUNT(DISTINCT AnonymousSessionId) AS Sessions,
+                       COUNT(*) AS Events
+                FROM UsageEvents
+                WHERE CreatedAt >= datetime('now', ?)
+                GROUP BY date(CreatedAt)
+                ORDER BY date(CreatedAt);
+                """,
+                (since,),
+            ).fetchall()
+        ]
 
     return {
         "days": days,
         "active_sessions": active_sessions,
         "total_events": total_events,
         "events_by_type": events_by_type,
+        "by_day": by_day,
     }
 
 
@@ -430,7 +479,7 @@ def _maybe_cleanup_expired_anonymous_data() -> None:
 
 @contextmanager
 def _connect():
-    conn = sqlite3.connect(DB_PATH)
+    conn = db_connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -878,20 +927,69 @@ def run_tailor(
     normalized_confirmed_skills = parse_confirmed_skills(
         confirmed_skills if confirmed_skills is not None else confirmed_skills_text
     )
-    keyword_report = analyze_keyword_coverage(
-        resume_text,
-        job_text,
-        confirmed_skills=normalized_confirmed_skills,
-        target_score=recommendation["target_score"],
-    )
-    tailored = tailor_resume_for_job(
-        resume_text,
-        job_text,
-        keyword_report=keyword_report,
-        confirmed_skills=normalized_confirmed_skills,
-        original_score=score,
-        target_score=recommendation["target_score"],
-    )
+    target = recommendation["target_score"]
+    with timed("tailor.keyword_coverage"):
+        keyword_report = analyze_keyword_coverage(
+            resume_text,
+            job_text,
+            confirmed_skills=normalized_confirmed_skills,
+            target_score=target,
+        )
+
+    # Iterative tailor -> measure REAL coverage on the tailored text -> re-tailor
+    # the still-uncovered (truthful) keywords, until we hit target or run out of
+    # passes. This is what actually pushes ATS coverage past 85% honestly.
+    max_passes = int(os.getenv("TAILOR_MAX_PASSES", "2"))
+    must_cover: list[str] = []
+    tailored = None
+    measured = {"score": 0, "uncovered": []}
+    iterations = 0
+    for _pass in range(max_passes):
+        iterations += 1
+        with timed(f"tailor.pass[{iterations}]"):
+            tailored = tailor_resume_for_job(
+                resume_text,
+                job_text,
+                keyword_report=keyword_report,
+                confirmed_skills=normalized_confirmed_skills,
+                original_score=score,
+                target_score=target,
+                must_cover_keywords=must_cover,
+            )
+        # Deterministic, no-LLM guarantee: list any genuinely-possessed (direct)
+        # keywords the model left out, so we don't burn a slow pass on them.
+        tailored = backfill_uncovered_keywords(tailored, keyword_report)
+        measured = measure_resume_coverage(tailored_to_text(tailored), keyword_report)
+        # Only spend another (slow) LLM pass on IMPORTANT gaps — chasing
+        # nice_to_have keywords across extra passes isn't worth the latency.
+        important_uncovered = [
+            item
+            for item in measured["uncovered"]
+            if item.importance in ("must_have", "preferred")
+        ]
+        if measured["score"] >= target or not important_uncovered:
+            break
+        # Feed the still-missing but truthful keywords into the next pass.
+        must_cover = [item.keyword for item in important_uncovered]
+
+    # Honest fit score on the tailored resume (separate from ATS keyword coverage).
+    # This is a real LLM call, but it's what surfaces the *improved* fit number to
+    # the user, so we keep it for correctness — its latency is addressed by running
+    # the fast tier (score) on a smaller model, not by skipping the call.
+    try:
+        with timed("tailor.rescore"):
+            tailored_match = score_resume_against_job(
+                tailored_to_text(tailored), job_text
+            )
+        tailored_match_score = tailored_match.match_score
+    except Exception:
+        tailored_match_score = score if score is not None else 0
+
+    # Guarantee JD-matched keywords are emphasized in the sendable PDF even when the
+    # model under-bolds. Presentation-only, and done AFTER coverage/rescore (which
+    # both strip '**' anyway), so it can't affect any score.
+    tailored = bold_matched_keywords(tailored, keyword_report)
+
     output_dir = _session_dir(TAILORED_OUTPUT_DIR, anonymous_session_id)
 
     save_tailored_resume(
@@ -901,13 +999,14 @@ def run_tailor(
         job.get("Position"),
         output_dir=output_dir,
     )
-    pdf_path = render_tailored_pdf(
-        tailored,
-        resume,
-        job.get("CompanyName"),
-        job.get("Position"),
-        output_dir=output_dir,
-    )
+    with timed("tailor.render_pdf"):
+        pdf_path = render_tailored_pdf(
+            tailored,
+            resume,
+            job.get("CompanyName"),
+            job.get("Position"),
+            output_dir=output_dir,
+        )
     save_tailored_resume_link(
         original_resume_id=resume_id,
         job_id=job_id,
@@ -922,7 +1021,10 @@ def run_tailor(
         tailored=tailored,
         pdf_path=Path(pdf_path),
         keyword_report=keyword_report,
-        ats_coverage_score=ats_coverage_score(keyword_report),
+        ats_coverage_score=measured["score"],
+        original_match_score=score,
+        tailored_match_score=tailored_match_score,
+        iterations=iterations,
     )
 
 
@@ -1031,14 +1133,15 @@ def coach_reply(
             )
         }
     }
-    result = graph.invoke(
-        {
-            "messages": [HumanMessage(content=user_message)],
-            "resume_text": resume_text,
-            "job_text": job_text,
-        },
-        cfg,
-    )
+    with timed("coach.graph_invoke"):
+        result = graph.invoke(
+            {
+                "messages": [HumanMessage(content=user_message)],
+                "resume_text": resume_text,
+                "job_text": job_text,
+            },
+            cfg,
+        )
     messages = result.get("messages") if isinstance(result, dict) else None
     if not messages:
         return "(the coach returned no message)"

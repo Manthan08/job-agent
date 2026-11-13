@@ -2,7 +2,8 @@
 __pycache__/
 *.pyc
 *.py[cod]
-.env
+.env*
+!.env.example
 AGENTS.md
 HANDOFF.md
 .github/copilot-instructions.md
@@ -11,10 +12,19 @@ docs/learnings.md
 *.db
 *.sqlite
 *.sqlite3
+*.db-*
+*.sqlite-*
+*.sqlite3-*
 *.pdf
 *.docx
 *.key
 *.pem
+*.p12
+*.pfx
+secrets/
+credentials.json
+*.log
+runtime/
 db/job_agent.db
 data/resumes/**
 !data/resumes/
@@ -29,6 +39,8 @@ data/stories/*.md
 !data/stories/_EXAMPLE.md
 data/job_watchlist.csv
 data/target_companies.csv
+data/provider_comparison*.html
+data/provider_comparison*.json
 db/*.db
 tmp/
 test-results/
@@ -38,3 +50,6 @@ frontend/dist/
 frontend/tmp/
 frontend/test-results/
 frontend/playwright-report/
+
+# Separate deployment checkout; the application source is tracked above.
+/resume-buddy/

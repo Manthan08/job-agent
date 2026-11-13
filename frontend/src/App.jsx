@@ -1,6 +1,7 @@
 import {
   Download,
   FileText,
+  Gauge,
   Keyboard,
   MessageSquare,
   Send,
@@ -375,6 +376,8 @@ function App() {
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [tailorResult, setTailorResult] = useState(null);
+  const [actionSeconds, setActionSeconds] = useState(0);
   const threadRef = useRef(null);
 
   const resumes = bootstrap.resumes || [];
@@ -432,6 +435,27 @@ function App() {
     });
   }, [history, busy, pairKey]);
 
+  // The ATS result belongs to one resume x job pair; drop it when the pair changes.
+  useEffect(() => {
+    setTailorResult(null);
+  }, [pairKey]);
+
+  // Tick an elapsed-seconds counter while ANY action runs so slow waits (the
+  // LLM-backed tailor AND the LLM-backed resume parse on save) read as
+  // intentional work rather than a stuck spinner.
+  useEffect(() => {
+    if (!busy) {
+      setActionSeconds(0);
+      return undefined;
+    }
+    const startedAt = Date.now();
+    const timer = setInterval(
+      () => setActionSeconds(Math.round((Date.now() - startedAt) / 1000)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [busy]);
+
   function setPairHistory(updater) {
     setChatByPair((current) => {
       const nextHistory = updater(current[pairKey] || []);
@@ -440,6 +464,10 @@ function App() {
   }
 
   async function runAction(label, action) {
+    // Only one action may run at a time. `busy` is a single global label, and
+    // before this guard a second action could overwrite it mid-flight — which
+    // re-enabled the still-running action's button (the Save "reappears" bug).
+    if (busy) return;
     setBusy(label);
     setError("");
     setNotice("");
@@ -516,11 +544,17 @@ function App() {
       const confirmedSkills = parseConfirmedSkills(confirmedSkillsText);
       const data = await api.tailor(Number(resumeId), Number(jobId), confirmedSkills);
       setPairState(data.pair_state);
+      setTailorResult({
+        ats_coverage_score: data.ats_coverage_score,
+        original_match_score: data.original_match_score,
+        tailored_match_score: data.tailored_match_score,
+        iterations: data.iterations,
+      });
       const atsScore = data.ats_coverage_score;
       setNotice(
         atsScore == null
           ? "Tailored resume generated."
-          : `Tailored resume generated. ATS coverage score: ${atsScore}/100.`
+          : `Tailored resume ready — ATS keyword coverage ${atsScore}/100.`,
       );
     });
   }
@@ -537,6 +571,9 @@ function App() {
   async function sendCoachMessage(message) {
     const trimmed = message.trim();
     if (!trimmed || !canUseCoach) return;
+    // Bail before mutating draft/history if another action is in flight, else
+    // runAction's guard would drop the call and leave an unanswered bubble.
+    if (busy) return;
     setChatDraft("");
     setPairHistory((current) => [...current, { role: "user", content: trimmed }]);
     await runAction("coach", async () => {
@@ -595,6 +632,7 @@ function App() {
               onPasteJob={handlePasteJob}
               onImportJob={handleImportJob}
               busy={busy}
+              actionSeconds={actionSeconds}
             />
 
             <section className="work-area">
@@ -607,19 +645,8 @@ function App() {
                 </div>
               )}
 
-              <div className="hero-chat">
-                <ChatPanel
-                  selectedPairReady={selectedPairReady}
-                  coachReady={bootstrap.features?.coach_ready}
-                  history={history}
-                  busy={busy}
-                  chatDraft={chatDraft}
-                  setChatDraft={setChatDraft}
-                  onSend={sendCoachMessage}
-                  threadRef={threadRef}
-                />
-
-                <InsightStack
+              <div className="top-row">
+                <ScoreCard
                   application={application}
                   score={score}
                   nextAction={nextAction}
@@ -627,20 +654,38 @@ function App() {
                   busy={busy}
                   pairReady={selectedPairReady}
                 />
+
+                <TailoredCard
+                  application={application}
+                  pairState={pairState}
+                  tailoring={tailoring}
+                  pairReady={selectedPairReady}
+                  confirmedSkillsText={confirmedSkillsText}
+                  setConfirmedSkillsText={setConfirmedSkillsText}
+                  busy={busy}
+                  tailorResult={tailorResult}
+                  tailorSeconds={actionSeconds}
+                  onTailor={handleTailor}
+                />
+
+                <QuestionBankCard
+                  prepEnabled={bootstrap.features?.prep_pack_enabled}
+                  prepPack={prepPack}
+                  pairReady={selectedPairReady}
+                  busy={busy}
+                  onPrep={handlePrep}
+                />
               </div>
 
-              <ArtifactRow
-                application={application}
-                pairState={pairState}
-                tailoring={tailoring}
-                prepEnabled={bootstrap.features?.prep_pack_enabled}
-                prepPack={prepPack}
-                pairReady={selectedPairReady}
-                confirmedSkillsText={confirmedSkillsText}
-                setConfirmedSkillsText={setConfirmedSkillsText}
+              <ChatPanel
+                selectedPairReady={selectedPairReady}
+                coachReady={bootstrap.features?.coach_ready}
+                history={history}
                 busy={busy}
-                onTailor={handleTailor}
-                onPrep={handlePrep}
+                chatDraft={chatDraft}
+                setChatDraft={setChatDraft}
+                onSend={sendCoachMessage}
+                threadRef={threadRef}
               />
             </section>
           </div>
@@ -662,6 +707,10 @@ function Topbar() {
           <span>Buddy</span>
         </span>
       </a>
+      <div className="topbar-credit">
+        <span className="credit-wish">Best wishes on cracking your interview 🍀</span>
+        <span className="credit-by">Built for job seekers</span>
+      </div>
     </header>
   );
 }
@@ -691,7 +740,9 @@ function InputRail(props) {
     onPasteJob,
     onImportJob,
     busy,
+    actionSeconds,
   } = props;
+  const savingResume = busy === "upload" || busy === "profile";
   const uploadInputId = "resume-upload-input";
   const uploadInputRef = useRef(null);
   const activeResumeLabel = displayResume(
@@ -778,9 +829,15 @@ function InputRail(props) {
                 className="button compact full"
                 type="button"
                 onClick={onUploadResume}
-                disabled={busy === "upload"}
+                disabled={!!busy}
               >
-                Save resume
+                {busy === "upload" ? (
+                  <>
+                    <Spinner /> Saving…
+                  </>
+                ) : (
+                  "Save resume"
+                )}
               </button>
             )}
           </form>
@@ -822,11 +879,18 @@ function InputRail(props) {
               }
               required
             />
-            <button className="button compact full" type="submit" disabled={busy === "profile"}>
-              Save profile
+            <button className="button compact full" type="submit" disabled={!!busy}>
+              {busy === "profile" ? (
+                <>
+                  <Spinner /> Saving…
+                </>
+              ) : (
+                "Save profile"
+              )}
             </button>
           </form>
         )}
+        {savingResume && <SaveProgress seconds={actionSeconds} />}
       </section>
 
       <section className="input-card">
@@ -872,9 +936,15 @@ function InputRail(props) {
               <button
                 className="button compact full"
                 type="submit"
-                disabled={busy === "job"}
+                disabled={!!busy}
               >
-                Save JD
+                {busy === "job" ? (
+                  <>
+                    <Spinner /> Saving…
+                  </>
+                ) : (
+                  "Save JD"
+                )}
               </button>
             )}
           </form>
@@ -890,9 +960,15 @@ function InputRail(props) {
               className="button compact"
               type="button"
               onClick={onImportJob}
-              disabled={!jobUrl || busy === "import"}
+              disabled={!jobUrl || !!busy}
             >
-              Import from URL
+              {busy === "import" ? (
+                <>
+                  <Spinner /> Importing…
+                </>
+              ) : (
+                "Import from URL"
+              )}
             </button>
           </div>
         )}
@@ -933,7 +1009,7 @@ function ChatPanel({
               key={label}
               type="button"
               onClick={() => onSend(message)}
-              disabled={!selectedPairReady || !coachReady || busy === "coach"}
+              disabled={!selectedPairReady || !coachReady || !!busy}
             >
               {label}
             </button>
@@ -970,7 +1046,7 @@ function ChatPanel({
           }
           value={chatDraft}
           onChange={(event) => setChatDraft(event.target.value)}
-          disabled={!selectedPairReady || !coachReady || busy === "coach"}
+          disabled={!selectedPairReady || !coachReady || !!busy}
         />
         {chatDraft.length > MAX_CHAT_CHARS * 0.75 && (
           <span className="composer-count">{remainingChars} left</span>
@@ -978,7 +1054,7 @@ function ChatPanel({
         <button
           className="button primary"
           type="submit"
-          disabled={!chatDraft.trim() || !selectedPairReady || !coachReady}
+          disabled={!chatDraft.trim() || !selectedPairReady || !coachReady || !!busy}
         >
           <Send size={16} />
           Ask
@@ -996,7 +1072,7 @@ function Bubble({ role, children }) {
   );
 }
 
-function InsightStack({
+function ScoreCard({
   application,
   score,
   nextAction,
@@ -1005,44 +1081,51 @@ function InsightStack({
   pairReady,
 }) {
   return (
-    <aside className="insight-stack" aria-label="Insights">
-      <section className="metric-card score-card">
-        <SectionTitle title="Your ATS Score" meta={<span className="status-dot" />} />
+    <article className="metric-card score-card" aria-label="Match fit score">
+      <span className="artifact-icon blue">
+        <Gauge size={22} />
+      </span>
+      <div>
+        <SectionTitle title="Match fit score" meta={<span className="status-dot" />} />
         <button
           className="button compact full"
           type="button"
           onClick={onScore}
-          disabled={!pairReady || busy === "score"}
+          disabled={!pairReady || !!busy}
         >
-          Score match
+          {busy === "score" ? (
+            <>
+              <Spinner /> Scoring…
+            </>
+          ) : (
+            "Score match"
+          )}
         </button>
         <div className="metric-value">
           <strong>{score ?? "--"}</strong>
-          <span>/ 100</span>
+          <span>/ 100 fit</span>
         </div>
         <GapSummary items={application?.MissingSkills || []} hasScore={score != null} />
-      </section>
-
-      <section className="metric-card">
-        <SectionTitle title="Next best action" meta={<span className="status-dot gold" />} />
-        <p>{nextAction}</p>
-      </section>
-    </aside>
+        <div className="next-action">
+          <span className="next-action-label">Next best action</span>
+          <p>{nextAction}</p>
+        </div>
+      </div>
+    </article>
   );
 }
 
-function ArtifactRow({
+function TailoredCard({
   application,
   pairState,
   tailoring,
-  prepEnabled,
-  prepPack,
   pairReady,
   confirmedSkillsText,
   setConfirmedSkillsText,
   busy,
+  tailorResult,
+  tailorSeconds,
   onTailor,
-  onPrep,
 }) {
   const applicationId = application?.Id;
   const canTailor = pairReady && Boolean(tailoring?.can_tailor);
@@ -1050,78 +1133,171 @@ function ArtifactRow({
   const tailoredDisplayName = pairState?.tailored_pdf_display_name || tailoredFilename;
 
   return (
-    <section className="output-row" aria-label="Generated artifacts">
-      <article className="artifact-card">
-        <span className="artifact-icon">
-          <FileText size={22} />
-        </span>
-        <div>
-          <h3>Tailored resume</h3>
-          <p>{tailoring?.message || "Score the pair before generating a tailored PDF."}</p>
-          <label className="artifact-field-label">
-            Confirmed skills to add
-            <textarea
-              className="artifact-textarea"
-              placeholder="HTML, CSS, JavaScript, AWS SQS basics"
-              value={confirmedSkillsText}
-              onChange={(event) => setConfirmedSkillsText(event.target.value)}
-              disabled={!pairReady || busy === "tailor"}
-            />
-          </label>
-          {pairState?.tailored_pdf_available && tailoredFilename && (
-            <p className="artifact-filename" title={tailoredFilename}>
-              Ready: {tailoredDisplayName}
-            </p>
-          )}
-          <div className="button-row">
-            <button
-              className="button compact accent"
-              type="button"
-              onClick={onTailor}
-              disabled={!canTailor || busy === "tailor"}
-            >
-              Tailor resume
-            </button>
-            {pairState?.tailored_pdf_available && applicationId && (
-              <a className="button compact" href={tailoredPdfUrl(applicationId)}>
-                <Download size={15} />
-                Download PDF
-              </a>
-            )}
-          </div>
-        </div>
-      </article>
+    <article className="artifact-card">
+      <span className="artifact-icon">
+        <FileText size={22} />
+      </span>
+      <div>
+        <h3>Tailored resume</h3>
+        <p>{tailoring?.message || "Score the pair before generating a tailored PDF."}</p>
+        <label className="artifact-field-label">
+          Confirmed skills to add
+          <textarea
+            className="artifact-textarea"
+            placeholder="HTML, CSS, JavaScript, AWS SQS basics"
+            value={confirmedSkillsText}
+            onChange={(event) => setConfirmedSkillsText(event.target.value)}
+            disabled={!pairReady || !!busy}
+          />
+        </label>
+        {pairState?.tailored_pdf_available && tailoredFilename && (
+          <p className="artifact-filename" title={tailoredFilename}>
+            Ready: {tailoredDisplayName}
+          </p>
+        )}
+        {busy === "tailor" && <TailorProgress seconds={tailorSeconds} />}
+        {busy !== "tailor" && <AtsResultCard result={tailorResult} />}
 
-      <article className="artifact-card">
-        <span className="artifact-icon sage">
-          <MessageSquare size={22} />
-        </span>
-        <div>
-          <h3>Question bank</h3>
-          <p>Role-specific interview questions from your story bank.</p>
-          <div className="button-row">
+        <div className="button-row">
+          <button
+            className="button compact accent"
+            type="button"
+            onClick={onTailor}
+            disabled={!canTailor || !!busy}
+          >
+            {busy === "tailor" ? (
+              <>
+                <Spinner /> Tailoring…
+              </>
+            ) : (
+              "Tailor resume"
+            )}
+          </button>
+          {pairState?.tailored_pdf_available && applicationId && (
+            <a className="button compact" href={tailoredPdfUrl(applicationId)}>
+              <Download size={15} />
+              Download PDF
+            </a>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function QuestionBankCard({ prepEnabled, prepPack, pairReady, busy, onPrep }) {
+  return (
+    <article className="artifact-card">
+      <span className="artifact-icon sage">
+        <MessageSquare size={22} />
+      </span>
+      <div>
+        <h3>Question bank</h3>
+        <p>Role-specific interview questions from your story bank.</p>
+        <div className="button-row">
+          <button
+            className="button compact"
+            type="button"
+            onClick={onPrep}
+            disabled={!pairReady || !prepEnabled || !!busy}
+          >
+            {busy === "prep" ? (
+              <>
+                <Spinner /> Generating…
+              </>
+            ) : (
+              "Generate pack"
+            )}
+          </button>
+          {prepPack && (
             <button
               className="button compact"
               type="button"
-              onClick={onPrep}
-              disabled={!pairReady || !prepEnabled || busy === "prep"}
+              onClick={() => downloadText("interview_prep.md", prepToMarkdown(prepPack))}
             >
-              Generate pack
+              <Download size={15} />
+              Download pack
             </button>
-            {prepPack && (
-              <button
-                className="button compact"
-                type="button"
-                onClick={() => downloadText("interview_prep.md", prepToMarkdown(prepPack))}
-              >
-                <Download size={15} />
-                Download pack
-              </button>
-            )}
-          </div>
+          )}
         </div>
-      </article>
-    </section>
+        <p className="artifact-foot">
+          Best after scoring — questions target your gaps, each with a suggested
+          STAR answer.
+        </p>
+      </div>
+    </article>
+  );
+}
+
+function Spinner() {
+  return <span className="btn-spinner" aria-hidden="true" />;
+}
+
+function TailorProgress({ seconds }) {
+  // The backend tailor is one POST, but it runs several stages. We can't stream
+  // them yet, so advance an honest, time-based stage label to set expectations.
+  const stages = [
+    "Classifying every JD keyword against your resume…",
+    "Rewriting summary, skills, and bullets in the JD's language…",
+    "Backfilling proven keywords and measuring ATS coverage…",
+  ];
+  const index = Math.min(stages.length - 1, Math.floor(seconds / 22));
+  return (
+    <div className="tailor-progress" role="status" aria-live="polite">
+      <span className="tailor-spinner" aria-hidden="true" />
+      <div className="tailor-progress-text">
+        <strong>{stages[index]}</strong>
+        <span>
+          {seconds}s · usually ~60–90s on the free model. This runs two large AI
+          passes — hang tight.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SaveProgress({ seconds }) {
+  // Saving a resume runs an LLM parse (extract structured profile from the PDF /
+  // text), which is slow on the free model. Show honest elapsed time + an
+  // expectation so the wait doesn't read as a frozen button.
+  return (
+    <div className="tailor-progress" role="status" aria-live="polite">
+      <span className="tailor-spinner" aria-hidden="true" />
+      <div className="tailor-progress-text">
+        <strong>Reading and structuring your resume…</strong>
+        <span>{seconds}s · usually ~20–40s on the free model. Hang tight.</span>
+      </div>
+    </div>
+  );
+}
+
+function AtsResultCard({ result }) {
+  if (!result) return null;
+  const ats = result.ats_coverage_score;
+  const before = result.original_match_score;
+  const after = result.tailored_match_score;
+  const passes = result.iterations;
+  return (
+    <div className="ats-result" aria-label="ATS result">
+      <div className="ats-result-head">
+        <span className="ats-result-label">ATS keyword coverage</span>
+        <span className="ats-result-score">
+          <strong>{ats ?? "--"}</strong>
+          <span>/ 100</span>
+        </span>
+      </div>
+      <div className="ats-result-row">
+        <span>Fit score</span>
+        <strong>
+          {before ?? "--"} → {after ?? "--"}
+        </strong>
+      </div>
+      <p className="score-hint">
+        Coverage is what ATS scanners actually rank — keep this high. Fit score is the
+        honest human-match estimate and moves less by design.
+        {passes ? ` (${passes} pass${passes > 1 ? "es" : ""})` : ""}
+      </p>
+    </div>
   );
 }
 

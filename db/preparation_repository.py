@@ -16,8 +16,9 @@ Column mapping (the schema predates this model, so we map pragmatically):
 """
 import json
 import sqlite3
-from pathlib import Path
 
+from db.connection import connect as db_connect
+from db.connection import database_path
 from db.public_safety import ensure_public_safety_schema
 from models.preparation import InterviewPrepPack
 
@@ -32,8 +33,8 @@ def get_application_id(
     """Look up the JobApplications.Id for a (resume, job) pair, if it exists."""
     conn = None
     try:
-        db_path = Path(__file__).resolve().parent / "job-tracker.db"
-        conn = sqlite3.connect(db_path)
+        db_path = database_path()
+        conn = db_connect(db_path)
         ensure_public_safety_schema(conn)
         if anonymous_session_id is None:
             row = conn.execute(
@@ -62,8 +63,8 @@ def save_prep_to_db(
     """Insert (replacing any prior pack) the prep pack; return its row Id."""
     conn = None
     try:
-        db_path = Path(__file__).resolve().parent / "job-tracker.db"
-        conn = sqlite3.connect(db_path)
+        db_path = database_path()
+        conn = db_connect(db_path)
         ensure_public_safety_schema(conn)
         cursor = conn.cursor()
 

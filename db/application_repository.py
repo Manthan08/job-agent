@@ -8,7 +8,9 @@ existing row instead of creating a duplicate.
 
 import json
 import sqlite3
-from pathlib import Path
+
+from db.connection import connect as db_connect
+from db.connection import database_path
 
 from db.public_safety import ensure_public_safety_schema
 from models.match import MatchResult
@@ -39,10 +41,9 @@ def save_application_to_db(
     """Insert or update one application; return its JobApplications.Id."""
     conn = None
     try:
-        HERE = Path(__file__).resolve().parent
-        db_path = HERE / "job-tracker.db"
+        db_path = database_path()
 
-        conn = sqlite3.connect(db_path)
+        conn = db_connect(db_path)
         cursor = conn.cursor()
         ensure_application_score_detail_columns(conn)
 

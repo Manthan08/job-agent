@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" font-family="'Segoe Print','Comic Sans MS',cursive">
+  <rect width="1080" height="1920" fill="#fdfcf8"/>
+
+  <!-- Title -->
+  <text x="540" y="110" text-anchor="middle" font-size="58" font-weight="bold" fill="#1e1e1e">AI Job Agent</text>
+  <text x="540" y="165" text-anchor="middle" font-size="34" fill="#666">system design · ep 1</text>
+
+  <!-- Inputs -->
+  <g transform="rotate(-1.2 250 290)">
+    <rect x="120" y="240" width="280" height="100" rx="14" fill="#fff3d6" stroke="#e2a300" stroke-width="3.5"/>
+    <text x="260" y="285" text-anchor="middle" font-size="32" fill="#1e1e1e">📄 My Resume</text>
+    <text x="260" y="322" text-anchor="middle" font-size="24" fill="#8a6d00">(PDF / docx)</text>
+  </g>
+  <g transform="rotate(1.4 820 290)">
+    <rect x="680" y="240" width="280" height="100" rx="14" fill="#fff3d6" stroke="#e2a300" stroke-width="3.5"/>
+    <text x="820" y="285" text-anchor="middle" font-size="32" fill="#1e1e1e">💼 Job Description</text>
+    <text x="820" y="322" text-anchor="middle" font-size="24" fill="#8a6d00">(watchlist)</text>
+  </g>
+
+  <!-- arrows down to parse -->
+  <path d="M260 345 Q 300 420 470 470" fill="none" stroke="#1e1e1e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M820 345 Q 780 420 610 470" fill="none" stroke="#1e1e1e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M470 470 l-26 -14 m26 14 l-8 -28" stroke="#1e1e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M610 470 l26 -14 m-26 14 l8 -28" stroke="#1e1e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Phase 1 -->
+  <g transform="rotate(-0.8 540 545)">
+    <rect x="240" y="490" width="600" height="110" rx="16" fill="#d6ecff" stroke="#1b6fb8" stroke-width="4"/>
+    <text x="540" y="538" text-anchor="middle" font-size="34" font-weight="bold" fill="#134b7c">1️⃣ Parse → structured JSON</text>
+    <text x="540" y="578" text-anchor="middle" font-size="25" fill="#134b7c">LangChain structured output</text>
+  </g>
+
+  <path d="M540 605 q 6 40 0 65" fill="none" stroke="#1e1e1e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M540 670 l-14 -24 m14 24 l14 -24" stroke="#1e1e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Phase 2 -->
+  <g transform="rotate(0.9 540 740)">
+    <rect x="240" y="685" width="600" height="110" rx="16" fill="#e2f7dd" stroke="#2e8b3d" stroke-width="4"/>
+    <text x="540" y="733" text-anchor="middle" font-size="34" font-weight="bold" fill="#1d5c28">2️⃣ Store → SQLite</text>
+    <text x="540" y="773" text-anchor="middle" font-size="25" fill="#1d5c28">resumes · jobs · scores</text>
+  </g>
+
+  <path d="M540 800 q -6 40 0 65" fill="none" stroke="#1e1e1e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M540 865 l-14 -24 m14 24 l14 -24" stroke="#1e1e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Phase 3 -->
+  <g transform="rotate(-1 540 935)">
+    <rect x="240" y="880" width="600" height="110" rx="16" fill="#ffe3e0" stroke="#c94436" stroke-width="4"/>
+    <text x="540" y="928" text-anchor="middle" font-size="34" font-weight="bold" fill="#8f2c22">3️⃣ Score resume ↔ job fit</text>
+    <text x="540" y="968" text-anchor="middle" font-size="25" fill="#8f2c22">LLM scoring rubric</text>
+  </g>
+
+  <path d="M540 995 q 6 40 0 65" fill="none" stroke="#1e1e1e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M540 1060 l-14 -24 m14 24 l14 -24" stroke="#1e1e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Phase 4 with ATS loop -->
+  <g transform="rotate(0.7 540 1160)">
+    <rect x="200" y="1075" width="680" height="170" rx="18" fill="#efe2ff" stroke="#7a3fc4" stroke-width="4"/>
+    <text x="540" y="1128" text-anchor="middle" font-size="34" font-weight="bold" fill="#4e2482">4️⃣ Tailor → ATS check → rewrite</text>
+    <text x="540" y="1170" text-anchor="middle" font-size="25" fill="#4e2482">loop until it passes ✅</text>
+    <!-- loop arrow -->
+    <path d="M840 1200 q 70 -40 0 -80" fill="none" stroke="#7a3fc4" stroke-width="4" stroke-dasharray="10 8" stroke-linecap="round"/>
+    <path d="M840 1120 l6 26 m-6 -26 l26 8" stroke="#7a3fc4" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <text x="930" y="1165" font-size="24" fill="#7a3fc4">loop!</text>
+  </g>
+
+  <path d="M540 1250 q -5 38 0 60" fill="none" stroke="#1e1e1e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M540 1310 l-14 -24 m14 24 l14 -24" stroke="#1e1e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Phase 5 -->
+  <g transform="rotate(-0.9 540 1385)">
+    <rect x="240" y="1325" width="600" height="110" rx="16" fill="#dff5f2" stroke="#178f80" stroke-width="4"/>
+    <text x="540" y="1373" text-anchor="middle" font-size="34" font-weight="bold" fill="#0e5f55">5️⃣ Interview coach 🎤</text>
+    <text x="540" y="1413" text-anchor="middle" font-size="25" fill="#0e5f55">LangGraph agent + story bank</text>
+  </g>
+
+  <path d="M540 1440 q 6 36 0 58" fill="none" stroke="#1e1e1e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M540 1498 l-14 -24 m14 24 l14 -24" stroke="#1e1e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Output -->
+  <g transform="rotate(1 540 1565)">
+    <rect x="290" y="1510" width="500" height="105" rx="16" fill="#fff8c4" stroke="#b59a00" stroke-width="4"/>
+    <text x="540" y="1555" text-anchor="middle" font-size="33" font-weight="bold" fill="#6b5a00">🎯 Tailored resume + prep</text>
+    <text x="540" y="1595" text-anchor="middle" font-size="24" fill="#6b5a00">ATS-friendly, per job</text>
+  </g>
+
+  <!-- Stack footer -->
+  <line x1="120" y1="1680" x2="960" y2="1680" stroke="#ccc" stroke-width="3" stroke-dasharray="12 10"/>
+  <text x="540" y="1740" text-anchor="middle" font-size="30" fill="#444">⚙️ FastAPI · React · SQLite · Docker</text>
+  <text x="540" y="1790" text-anchor="middle" font-size="30" fill="#444">🧠 NVIDIA Nemotron · LangChain · LangGraph</text>
+  <text x="540" y="1852" text-anchor="middle" font-size="27" fill="#888">deployed free on 🤗 Hugging Face Spaces</text>
+</svg>

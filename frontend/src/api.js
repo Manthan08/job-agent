@@ -1,5 +1,39 @@
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
+// Without a timeout a hung backend leaves the UI spinning forever. These bound
+// the wait and surface a clear error instead. Tailoring runs several 120b LLM
+// passes whose latency varies a lot on the free NVIDIA tier (measured 170–290s
+// end-to-end), so it gets a generous ceiling — tight enough to catch a true hang,
+// loose enough not to abort a legitimately slow run. The real cure for the slow
+// runs is moving the fast-tier calls (keyword/rescore) to a nano model.
+const DEFAULT_TIMEOUT_MS = 120000;
+const TAILOR_TIMEOUT_MS = 300000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(
+        `Request timed out after ${Math.round(timeoutMs / 1000)}s. ` +
+          "The server may be busy — please try again in a moment."
+      );
+    }
+    // A failed fetch (server unreachable, dropped connection) surfaces as a
+    // cryptic "Failed to fetch" / "Load failed". Give the user something human.
+    if (err instanceof TypeError) {
+      throw new Error(
+        "Couldn't reach the server — check your connection and try again."
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function parseResponse(response) {
   if (response.ok) {
     const contentType = response.headers.get("content-type") || "";
@@ -17,14 +51,19 @@ async function parseResponse(response) {
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
+  const { timeoutMs, ...fetchOptions } = options;
+  const response = await fetchWithTimeout(
+    `${API_BASE}${path}`,
+    {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(fetchOptions.headers || {}),
+      },
+      ...fetchOptions,
     },
-    ...options,
-  });
+    timeoutMs
+  );
   return parseResponse(response);
 }
 
@@ -43,7 +82,7 @@ export const api = {
   uploadResume: async (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch(`${API_BASE}/api/resumes/upload`, {
+    const response = await fetchWithTimeout(`${API_BASE}/api/resumes/upload`, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -68,6 +107,7 @@ export const api = {
   tailor: (resumeId, jobId, confirmedSkills = []) =>
     request("/api/tailor", {
       method: "POST",
+      timeoutMs: TAILOR_TIMEOUT_MS,
       body: JSON.stringify({
         resume_id: resumeId,
         job_id: jobId,

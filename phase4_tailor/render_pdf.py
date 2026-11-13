@@ -121,10 +121,11 @@ def _experience_html(tailored: TailoredResumeModel) -> str:
   <div class="job">
     <table class="jobhead" width="100%">
       <tr>
-        <td class="jobleft"><strong>{company}</strong> &nbsp; <span class="role">{role}</span></td>
+        <td class="jobleft"><strong>{company}</strong></td>
         <td class="jobright">{dates}</td>
       </tr>
     </table>
+    <p class="role">{role}</p>
     {_bullet_list_html(job.bullets)}
   </div>"""
     return blocks
@@ -179,23 +180,24 @@ def _build_html(tailored: TailoredResumeModel, resume: dict, density: dict) -> s
 <style>
   @page {{ size: A4; margin: {d['margin']}; }}
   body {{ font-family: Helvetica, Arial, sans-serif; font-size: {d['body_pt']}pt; color: #222; line-height: {d['line_height']}; }}
-  a {{ color: #222; text-decoration: none; }}
-  .name {{ font-size: 18pt; font-weight: bold; color: #174a7c; margin: 0; }}
-  .headrole {{ font-size: 10pt; color: #333; margin: 1pt 0 0 0; }}
-  .contact {{ font-size: 8.5pt; color: #555; margin: 3pt 0 0 0; }}
-  h2 {{ font-size: {d['body_pt']}pt; color: #174a7c; text-transform: uppercase; letter-spacing: 0.4pt;
-        border-bottom: 0.7pt solid #b8c7d8; padding-bottom: 2pt; margin: {d['h2_top']}pt 0 4pt 0; }}
+  a {{ color: #2f5496; text-decoration: none; }}
+  .name {{ font-size: {d['name_pt']}pt; font-weight: bold; color: #1a1a1a; margin: 0; letter-spacing: 0.2pt; }}
+  .headrole {{ font-size: 10.5pt; color: #222; margin: 2pt 0 0 0; }}
+  .contact {{ font-size: 9pt; color: #666; margin: 3pt 0 0 0; }}
+  .contact a {{ color: #2f5496; }}
+  h2 {{ font-size: {d['body_pt']}pt; color: #2f5496; text-transform: uppercase; letter-spacing: 0.5pt;
+        border-bottom: 0.8pt solid #a9bcd6; padding-bottom: 2pt; margin: {d['h2_top']}pt 0 4pt 0; }}
   p {{ margin: 0 0 {d['p_gap']}pt 0; }}
   p.bullet {{ margin: 0 0 {d['li_gap']}pt 11pt; text-indent: -7pt; }}
   strong {{ color: #111; }}
   p.skill {{ margin: 0 0 2pt 0; }}
   table.skills {{ border-collapse: collapse; margin: 0; }}
-  td.skillcell {{ width: 50%; vertical-align: top; padding: 0 10pt 3pt 0; }}
+  td.skillcell {{ width: 50%; vertical-align: top; padding: 0 14pt 3pt 0; }}
   .job {{ margin-bottom: {d['job_gap']}pt; }}
-  table.jobhead {{ border-collapse: collapse; margin: 0 0 1pt 0; }}
+  table.jobhead {{ border-collapse: collapse; margin: 0; }}
   td.jobleft {{ font-size: {d['body_pt']}pt; }}
-  td.jobleft .role {{ font-style: italic; color: #444; }}
   td.jobright {{ text-align: right; font-size: 8.5pt; color: #555; white-space: nowrap; }}
+  p.role {{ font-style: italic; color: #2f5496; margin: 0 0 2pt 0; }}
   .tech {{ color: #555; font-style: italic; }}
 </style>
 </head>
@@ -222,11 +224,11 @@ def _build_html(tailored: TailoredResumeModel, resume: dict, density: dict) -> s
 # Compactness ladder, most readable first. render_tailored_pdf escalates through
 # these only as needed to pull the resume onto a single page.
 _DENSITY_LADDER = [
-    {"margin": "1.3cm 1.5cm", "body_pt": 9.5, "line_height": 1.25, "h2_top": 9,
-     "p_gap": 4, "li_gap": 1.5, "job_gap": 5, "two_column_skills": False},
-    {"margin": "1.1cm 1.3cm", "body_pt": 9.0, "line_height": 1.2, "h2_top": 8,
-     "p_gap": 3, "li_gap": 1.2, "job_gap": 4, "two_column_skills": False},
-    {"margin": "1.0cm 1.2cm", "body_pt": 8.7, "line_height": 1.16, "h2_top": 7,
+    {"margin": "1.3cm 1.5cm", "body_pt": 9.5, "name_pt": 22, "line_height": 1.25, "h2_top": 9,
+     "p_gap": 4, "li_gap": 1.5, "job_gap": 5, "two_column_skills": True},
+    {"margin": "1.1cm 1.3cm", "body_pt": 9.0, "name_pt": 21, "line_height": 1.2, "h2_top": 8,
+     "p_gap": 3, "li_gap": 1.2, "job_gap": 4, "two_column_skills": True},
+    {"margin": "1.0cm 1.2cm", "body_pt": 8.7, "name_pt": 20, "line_height": 1.16, "h2_top": 7,
      "p_gap": 2.5, "li_gap": 1.0, "job_gap": 3.5, "two_column_skills": True},
 ]
 

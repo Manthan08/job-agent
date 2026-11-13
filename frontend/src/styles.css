@@ -132,6 +132,28 @@ input:disabled {
   color: #7b5140;
 }
 
+.topbar-credit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-left: auto;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.credit-wish {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.credit-by {
+  color: var(--accent-dark);
+  font-size: 13px;
+  font-weight: 780;
+}
+
 .brand::after {
   content: "";
   position: absolute;
@@ -151,7 +173,7 @@ input:disabled {
 .workspace-grid {
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(400px, 430px) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
   gap: 20px;
   align-items: stretch;
   min-height: 0;
@@ -397,16 +419,24 @@ input:disabled {
   font-weight: 800;
 }
 
-.hero-chat {
+.top-row {
+  /* Grow 0 / shrink 1: take only what the cards need, but YIELD space to the
+     chat when the Tailored card's content gets tall. Without this the row grew
+     unbounded and squeezed the Interview Coach chat out of view. Oversized
+     cards scroll internally (see .artifact-card overflow). */
+  flex: 0 1 auto;
   min-height: 0;
-  flex: 1 1 0;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
 }
 
 .chat-panel {
-  min-height: 0;
+  flex: 1 1 0;
+  /* Floor so the coach chat stays usable no matter how tall the result cards get. */
+  min-height: 320px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -522,7 +552,7 @@ input:disabled {
 }
 
 .bubble {
-  max-width: min(680px, 82%);
+  max-width: min(760px, 80%);
   width: fit-content;
   padding: 13px 15px;
   border: 1px solid var(--line);
@@ -666,25 +696,21 @@ input:disabled {
   white-space: nowrap;
 }
 
-.insight-stack {
-  min-height: 0;
-  display: grid;
-  gap: 12px;
-  align-content: start;
-  overflow-y: auto;
-}
-
 .metric-card {
-  padding: 18px;
+  padding: 16px;
   background: #fffdf8;
 }
 
 .score-card {
-  padding: 18px;
+  height: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px;
 }
 
 .score-card .section-title h2 {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.2;
 }
 
@@ -699,12 +725,33 @@ input:disabled {
   display: flex;
   align-items: baseline;
   gap: 7px;
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .metric-value strong {
-  font-size: clamp(68px, 5.4vw, 82px);
-  line-height: 0.82;
+  font-size: clamp(36px, 2.6vw, 44px);
+  line-height: 0.85;
+}
+
+.next-action {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.next-action-label {
+  display: block;
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.next-action p {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .metric-value span {
@@ -754,7 +801,7 @@ input:disabled {
 }
 
 .gap-summary {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .gap-label {
@@ -767,7 +814,7 @@ input:disabled {
 }
 
 .score-hint {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .tag-list.compact {
@@ -782,16 +829,13 @@ input:disabled {
   font-size: 11px;
 }
 
-.output-row {
-  flex: 0 0 auto;
-  min-height: 146px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
 .artifact-card {
   min-height: 132px;
+  height: 100%;
+  /* When the Tailored card's content (textarea + ATS result) exceeds the row
+     height, scroll inside the card instead of pushing the row taller and
+     crushing the chat below. */
+  overflow-y: auto;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 14px;
@@ -826,10 +870,10 @@ input:disabled {
 }
 
 .artifact-card p {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 12.5px;
+  line-height: 1.4;
 }
 
 .artifact-card .artifact-filename {
@@ -845,7 +889,7 @@ input:disabled {
 .artifact-field-label {
   display: grid;
   gap: 6px;
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   color: var(--faint);
   font-size: 11px;
   font-weight: 800;
@@ -855,7 +899,7 @@ input:disabled {
 
 .artifact-textarea {
   width: 100%;
-  min-height: 64px;
+  min-height: 52px;
   resize: vertical;
   border: 1px solid var(--line);
   background: #fffaf3;
@@ -931,6 +975,26 @@ input:disabled {
   gap: 8px;
 }
 
+/* Artifact cards scroll internally (see .artifact-card overflow) so the chat
+   below stays usable. That can hide the primary actions below the fold, so pin
+   the action row to the card's bottom — Tailor / Download PDF / Generate pack
+   stay visible while the message, textarea, and ATS result scroll above it. */
+.artifact-card .button-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding: 10px 0 2px;
+  background: var(--surface-strong);
+  border-top: 1px solid var(--line);
+}
+
+.artifact-foot {
+  margin: 12px 0 0;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 @media (max-width: 1100px) {
   .app-frame {
     height: auto;
@@ -949,17 +1013,13 @@ input:disabled {
     overflow: visible;
   }
 
-  .hero-chat {
-    grid-template-columns: 1fr;
+  .top-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .chat-panel {
-    min-height: 680px;
-  }
-
-  .insight-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    overflow: visible;
+    flex: 0 0 auto;
+    min-height: 560px;
   }
 }
 
@@ -985,9 +1045,7 @@ input:disabled {
   }
 
   .workspace-grid,
-  .hero-chat,
-  .output-row,
-  .insight-stack {
+  .top-row {
     grid-template-columns: 1fr;
   }
 
@@ -1027,4 +1085,128 @@ input:disabled {
   .composer {
     grid-template-columns: 1fr;
   }
+}
+
+/* --- Phase 2: tailor progress + ATS result -------------------------------- */
+.tailor-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+
+.tailor-spinner {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 3px solid var(--line-strong);
+  border-top-color: var(--accent);
+  animation: tailor-spin 0.8s linear infinite;
+}
+
+@keyframes tailor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Inline spinner for action buttons — prevents double-clicks by signalling work. */
+.btn-spinner {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.75;
+  animation: tailor-spin 0.7s linear infinite;
+}
+
+.tailor-progress-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tailor-progress-text strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.tailor-progress-text span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ats-result {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid #cdded5;
+  border-radius: var(--radius);
+  background: #f0f7f3;
+}
+
+.ats-result-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ats-result-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #315d4e;
+}
+
+.ats-result-score {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.ats-result-score strong {
+  font-size: 40px;
+  line-height: 0.9;
+  color: var(--sage);
+}
+
+.ats-result-score span {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ats-result-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #cdded5;
+}
+
+.ats-result-row span {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.ats-result-row strong {
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.ats-result .score-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
 }

@@ -1,14 +1,24 @@
 import os
-from typing import Annotated, Literal, NotRequired, TypedDict
+from typing import Annotated, Literal
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, END , StateGraph, add_messages
 
-from config.settings import get_llm
+from config.settings import get_llm, fast_model
 
 
 MAX_COACH_REPLY_CHARS = int(os.getenv("MAX_COACH_REPLY_CHARS", "900"))
+# How many of the most recent conversation messages to actually send to the model.
+# The full history is still kept by the checkpointer (the conversation stays
+# resumable); we only bound what each turn re-sends, so coach latency/token cost
+# stays flat instead of growing linearly as the chat gets longer.
+COACH_HISTORY_WINDOW = int(os.getenv("COACH_HISTORY_WINDOW", "8"))
+# Coach replies are post-trimmed to MAX_COACH_REPLY_CHARS (~900 chars ≈ a few
+# hundred tokens), so the 4096-token default just lets the model ramble slowly.
+# A tight output budget makes each turn generate noticeably faster.
+COACH_MAX_TOKENS = int(os.getenv("COACH_MAX_TOKENS", "1024"))
 SHORTENED_REPLY_SUFFIX = "\n\n[Shortened. Ask me to expand one point if needed.]"
 CoachMode = Literal["mock"] | None
 
@@ -215,8 +225,15 @@ def _call_coach(state: CoachState, system_prompt: str) -> dict:
         f"\n\n<job_description>\n{state.get('job_text', '')}\n</job_description>"
     )
     
-    llm = get_llm()
-    response = llm.invoke([SystemMessage(content=system_prompt + grounding)] + state["messages"])
+    # Only re-send the most recent window of turns. The newest human message is
+    # always last, so a tail slice keeps the live question + recent context while
+    # dropping stale early turns that just inflate latency on every call.
+    history = state["messages"]
+    if COACH_HISTORY_WINDOW > 0:
+        history = history[-COACH_HISTORY_WINDOW:]
+
+    llm = get_llm(model=fast_model(), max_tokens=COACH_MAX_TOKENS)
+    response = llm.invoke([SystemMessage(content=system_prompt + grounding)] + history)
     response = _compact_ai_message(response)
     return {"messages":[response]}
     

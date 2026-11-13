@@ -33,7 +33,8 @@ class LongLLM:
 class CoachGraphMockModeTests(unittest.TestCase):
     def setUp(self):
         self.original_get_llm = coach_graph.get_llm
-        coach_graph.get_llm = lambda: FakeLLM()
+        # get_llm now accepts an optional per-task `model=` arg; tolerate any args.
+        coach_graph.get_llm = lambda *args, **kwargs: FakeLLM()
 
     def tearDown(self):
         coach_graph.get_llm = self.original_get_llm
@@ -178,7 +179,7 @@ class CoachGraphMockModeTests(unittest.TestCase):
         self.assertIn("Do not include code blocks", system_prompt)
 
     def test_long_assistant_reply_is_capped_before_checkpoint(self):
-        coach_graph.get_llm = lambda: LongLLM()
+        coach_graph.get_llm = lambda *args, **kwargs: LongLLM()
 
         result = coach_graph.graph.invoke(
             {

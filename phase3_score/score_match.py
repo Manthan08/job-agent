@@ -12,7 +12,7 @@ Run:  python -m phase3_score.score_match
 """
 
 import json
-from config.settings import get_llm
+from config.settings import invoke_structured, fast_model
 from models.match import MatchResult
 from db.resume_repository import get_resume_by_id
 from db.job_repository import get_job_by_id
@@ -140,12 +140,18 @@ def score_resume_against_job(resume_text: str, job_text: str) -> MatchResult:
             ),
         ])
 
-        #2. Invoke the chain and return the structured result:
-        ## Chains in LLM or LangChain are typically built by piping a prompt into an LLM with a structured output parser. so output is automatically parsed into the MatchResult dataclass.
-        structured_llm = get_llm().with_structured_output(MatchResult)
-        chain = prompt | structured_llm
-
-        return chain.invoke({"resume_text": resume_text, "job_text": job_text})
+        #2. Invoke reliably (retry on a hotter model if the result is degenerate):
+        result = invoke_structured(
+            MatchResult,
+            prompt,
+            {"resume_text": resume_text, "job_text": job_text},
+            validate=lambda r: bool((r.reasoning or "").strip()),
+            model=fast_model(),
+            retries=1,
+        )
+        if result is None:
+            raise RuntimeError("Scoring failed: model did not return a valid result.")
+        return result
     
     except Exception as e:
         print(f"Error during scoring: {e}")
